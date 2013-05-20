@@ -1,11 +1,12 @@
 #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 #SingleInstance force
-#Persistent ;Script nicht beenden nach der Auto-Execution-Section
+#Persistent
 
 SetWorkingDir %A_ScriptDir%
 SetTitleMatchMode, 2
 
+Menu, tray, Icon , VideoResizer.ico,  1
 Menu, tray, NoStandard
 Menu, tray, add  ; Creates a separator line.
 Menu, tray, add, Reload  
