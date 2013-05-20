@@ -6,7 +6,7 @@ Resize Videos from right click menu using ffmpeg
 This is just a simple Windows gui for ffmpeg to convert videos from the file explorer right click menu.
 
 **Demo Video**
-https://www.youtube.com/watch?v=EJu8sHGppGo
+https://www.youtube.com/watch?v=EJu8sHGppGo&hd=1
 
 
 **Installation**
