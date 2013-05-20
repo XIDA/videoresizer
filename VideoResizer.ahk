@@ -38,9 +38,9 @@ Menu, tray, add, Exit
 	if(ini_tempDir == "WINDOWS_TEMP") {
 		ini_tempDir = %A_Temp%
 	}
-	
+
+	;check if no parameters START		
 	cFile = %1%
-	;M sgBox, %1%
 	cLength := StrLen(cFile)	
 	
 	if(cLength = 0) {
@@ -48,40 +48,50 @@ Menu, tray, add, Exit
 		GoSub, AddRemoveFromRegistry	
 		ExitApp
 	}
+	;check if no parameters END
+	
+	Loop, %0%  ; For each parameter:
+	{
+		cFile := %A_Index%  ; Fetch the contents of the variable whose name is contained in A_Index.
 
-	;MsgBox, %1%
-	
-	SplitPath, cFile, OutFileName, sourceDir, OutExtension, OutNameNoExt, OutDrive
-	;M sgBox, %OutDir%
+		;MsgBox, %1%
+		
+		SplitPath, cFile, OutFileName, sourceDir, OutExtension, OutNameNoExt, OutDrive
+		;M sgBox, %OutDir%
 
-	outFilename =%OutNameNoExt%_videoresizer.mp4
-	
-	;delete output file if it exists
-	FileDelete, %ini_tempDir%\%outFilename%
-	
-	;this scale version would scale all videos to half the size of the original if > ini_resizeIfWidthLargerThan
-	;trunc (x/2)*2 - this makes sure the width is an even number, because odd numbers are not allowed
-	;scale = 'if(gt(iw,%ini_resizeIfWidthLargerThan%),trunc((iw/2)/2)*2,iw)':-1
-	
-	scale = 'if(gt(iw,%ini_resizeIfWidthLargerThan%),1024,iw)':trunc(ow/a/2)*2
-	ffmpegCommand =  -i %cFile% -vf scale="%scale%" -vcodec libx264 -vprofile high -preset slow -b:v %ini_bitRate%k -maxrate %ini_bitRate%k -bufsize 1000k -acodec copy  %ini_tempDir%\%outFilename%
-	;M sgBox, %ffmpegCommand%
-	RunWait, ffmpeg.exe %ffmpegCommand%
-	
-	;if for any reason the filesize is 0, something went wrong
-	FileGetSize, outputFileSize,  %ini_tempDir%\%outFilename%, K  ; Retrieve the size in Kbytes.
-	if(outputFileSize > 0) {
-		;M sgBox, %outputFileSize%
-		if(ini_overrideFile = 1) {
-			;FileDelete, %1%
-			FileMove, %ini_tempDir%\%outFilename%, %1%, 1
-		} else {
-			FileMove, %ini_tempDir%\%outFilename%, %sourceDir%\%outFilename%, 1
-		}
-	} else {
+		outFilename =%OutNameNoExt%_videoresizer.mp4
+		
+		;delete output file if it exists
 		FileDelete, %ini_tempDir%\%outFilename%
-		MsgBox, There was an error converting your file
+		
+		;this scale version would scale all videos to half the size of the original if > ini_resizeIfWidthLargerThan
+		;trunc (x/2)*2 - this makes sure the width is an even number, because odd numbers are not allowed
+		;scale = 'if(gt(iw,%ini_resizeIfWidthLargerThan%),trunc((iw/2)/2)*2,iw)':-1
+		
+		TrayTip, %gName%, converting %cFile%
+		
+		scale = 'if(gt(iw,%ini_resizeIfWidthLargerThan%),1024,iw)':trunc(ow/a/2)*2
+		ffmpegCommand =  -i %cFile% -vf scale="%scale%" -vcodec libx264 -vprofile high -preset slow -b:v %ini_bitRate%k -maxrate %ini_bitRate%k -bufsize 1000k -acodec copy  %ini_tempDir%\%outFilename%
+		;M sgBox, %ffmpegCommand%
+		RunWait, ffmpeg.exe %ffmpegCommand%
+		
+		;if for any reason the filesize is 0, something went wrong
+		FileGetSize, outputFileSize,  %ini_tempDir%\%outFilename%, K  ; Retrieve the size in Kbytes.
+		if(outputFileSize > 0) {
+			;M sgBox, %outputFileSize%
+			if(ini_overrideFile = 1) {
+				;FileDelete, %1%
+				FileMove, %ini_tempDir%\%outFilename%, %1%, 1
+			} else {
+				FileMove, %ini_tempDir%\%outFilename%, %sourceDir%\%outFilename%, 1
+			}
+		} else {
+			FileDelete, %ini_tempDir%\%outFilename%
+			MsgBox, There was an error converting your file
+		}		
+
 	}
+
 	ExitApp
 	
 return
