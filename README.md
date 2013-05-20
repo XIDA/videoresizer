@@ -1,4 +1,4 @@
-videoresizer
+Video Resizer
 ============
 
 Resize Videos from right click menu using ffmpeg
@@ -6,6 +6,7 @@ Resize Videos from right click menu using ffmpeg
 This is just a simple Windows gui for ffmpeg to convert videos from the file explorer right click menu.
 
 **Demo Video**
+https://www.youtube.com/watch?v=EJu8sHGppGo
 
 
 **Installation**
@@ -21,3 +22,4 @@ If you don't want that you can skip this step
 
 **Further information**
 - The .ahk script can be compiled to the .exe with www.autohotkey.com
+- Sound is not changed from the video file

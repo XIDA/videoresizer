@@ -64,7 +64,7 @@ Menu, tray, add, Exit
 	
 	scale = 'if(gt(iw,%ini_resizeIfWidthLargerThan%),1024,iw)':trunc(ow/a/2)*2
 	ffmpegCommand =  -i %cFile% -vf scale="%scale%" -vcodec libx264 -vprofile high -preset slow -b:v %ini_bitRate%k -maxrate %ini_bitRate%k -bufsize 1000k -acodec copy  %ini_tempDir%\%outFilename%
-	MsgBox, %ffmpegCommand%
+	;M sgBox, %ffmpegCommand%
 	RunWait, ffmpeg.exe %ffmpegCommand%
 	
 	;if for any reason the filesize is 0, something went wrong
