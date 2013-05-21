@@ -1,7 +1,7 @@
 Video Resizer
 ============
 
-Resize Videos from right click menu using ffmpeg
+Convert and resize videos from right click menu using ffmpeg
 
 This is just a simple Windows gui for ffmpeg to convert videos from the file explorer right click menu.
 
