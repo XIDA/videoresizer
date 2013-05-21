@@ -21,5 +21,5 @@ If you don't want that you can skip this step
 - Now you can drag video files on VideoResizer.exe and it will start conversion
 
 **Further information**
-- The .ahk script can be compiled to the .exe with www.autohotkey.com
+- The .ahk script can be compiled to .exe with www.autohotkey.com
 - Sound is not changed from the video file
