@@ -33,7 +33,7 @@ Menu, tray, add, Exit
 	IniRead, ini_resizeIfWidthLargerThan, %iniName%, settings, resizeIfWidthLargerThan
 	IniRead, ini_bitRate, %iniName%, settings, bitRate
 	IniRead, ini_overrideFile, %iniName%, settings, overrideFile
-	
+
 	IniRead, ini_tempDir, %iniName%, settings, tempDir
 	if(ini_tempDir == "WINDOWS_TEMP") {
 		ini_tempDir = %A_Temp%
@@ -53,13 +53,16 @@ Menu, tray, add, Exit
 	Loop, %0%  ; For each parameter:
 	{
 		cFile := %A_Index%  ; Fetch the contents of the variable whose name is contained in A_Index.
-
-		;MsgBox, %1%
+		SplitPath, cFile, cFileName, sourceDir, cFileExtension, cFileNameNoExt, OutDrive
+		StringReplace, cFileNameNoExtNoSpaces, cFileNameNoExt, %A_Space%,,All
 		
-		SplitPath, cFile, OutFileName, sourceDir, OutExtension, OutNameNoExt, OutDrive
+		;cFileShort := ConvertFAT(cFile)			
+		;cFileShort = %cFileShort%.%OutExtension%
+		;M sgBox %cFileShort%
+		
 		;M sgBox, %OutDir%
 
-		outFilename =%OutNameNoExt%_videoresizer.mp4
+		outFilename = %cFileNameNoExtNoSpaces%_videoresizer.mp4		
 		
 		;delete output file if it exists
 		FileDelete, %ini_tempDir%\%outFilename%
@@ -71,7 +74,7 @@ Menu, tray, add, Exit
 		TrayTip, %gName%, converting %cFile%
 		
 		scale = 'if(gt(iw,%ini_resizeIfWidthLargerThan%),1024,iw)':trunc(ow/a/2)*2
-		ffmpegCommand =  -i %cFile% -vf scale="%scale%" -vcodec libx264 -vprofile high -preset slow -b:v %ini_bitRate%k -maxrate %ini_bitRate%k -bufsize 1000k -acodec copy  %ini_tempDir%\%outFilename%
+		ffmpegCommand =  -i "%cFile%" -vf scale="%scale%" -vcodec libx264 -vprofile high -preset slow -b:v %ini_bitRate%k -maxrate %ini_bitRate%k -bufsize 1000k -acodec copy  %ini_tempDir%\%outFilename%
 		;M sgBox, %ffmpegCommand%
 		RunWait, ffmpeg.exe %ffmpegCommand%
 		
@@ -81,9 +84,14 @@ Menu, tray, add, Exit
 			;M sgBox, %outputFileSize%
 			if(ini_overrideFile = 1) {
 				;FileDelete, %1%
-				FileMove, %ini_tempDir%\%outFilename%, %1%, 1
+				FileMove, %ini_tempDir%\%outFilename%, %cFile%, 1
 			} else {
-				FileMove, %ini_tempDir%\%outFilename%, %sourceDir%\%outFilename%, 1
+				;M sgBox, %sourceDir%\%cFileNameNoExtNoSpaces%_videoresizer.mp4
+				FileMove, %ini_tempDir%\%outFilename%, %sourceDir%\%cFileNameNoExt%_videoresizer.mp4, 1
+				if ErrorLevel  ; Successfully loaded.
+				{
+					MsgBox, file could not be moved.
+				}					
 			}
 		} else {
 			FileDelete, %ini_tempDir%\%outFilename%
@@ -110,7 +118,7 @@ AddRemoveFromRegistry:
 			StringReplace, cScriptPathAndName, cScriptPathAndName, \ , \\, All				
 			AddCommand := "Resize Video"
 			RegWrite, REG_SZ, HKEY_CLASSES_ROOT, %gRegEntry%, , %AddCommand%
-			RegWrite, REG_SZ, HKEY_CLASSES_ROOT, %gRegEntry%\command, , "%cScriptPathAndName%" `%1
+			RegWrite, REG_SZ, HKEY_CLASSES_ROOT, %gRegEntry%\command, , "%cScriptPathAndName%" "`%1"
 			RegWrite, REG_SZ, HKEY_CLASSES_ROOT, %gRegEntry%, Icon, "%A_ScriptDir%\%gName%.ico"
 
 			RegRead, cVal, HKEY_CLASSES_ROOT, %gRegEntry%				
@@ -137,6 +145,25 @@ return
 ScriptNameNoExt() {
     SplitPath, A_ScriptName, , , , ScriptNameNoExt
     return ScriptNameNoExt
+}
+
+ConvertFAT(String)
+{
+	StringSplit, Path, String, \
+	Loop, %Path0%
+	{
+		IfInString, Path%A_Index%, %A_Space%
+		{
+			StringReplace, Path%A_Index%, Path%A_Index%, %A_Space%
+			StringLeft, Path%A_Index%, Path%A_Index%, 6
+			Path%A_Index% := Path%A_Index% . "~1"
+		}
+		If A_Index = %Path0%
+			Output := Output . Path%A_Index%
+		Else
+			Output := Output . Path%A_Index% . "\"
+	}
+	Return, Output
 }
 	
 Reload:
