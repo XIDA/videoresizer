@@ -4,13 +4,14 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 #Persistent
 
 SetWorkingDir %A_ScriptDir%
-SetTitleMatchMode, 2
+;SetTitleMatchMode, 2
 
 Menu, tray, Icon , VideoResizer.ico,  1
 Menu, tray, NoStandard
 Menu, tray, add  ; Creates a separator line.
 Menu, tray, add, Reload  
 Menu, tray, add, Exit
+
 
 	IfNotExist, ffmpeg.exe
 	{
@@ -32,8 +33,34 @@ Menu, tray, add, Exit
 	iniName = %gName%.ini
 	IniRead, ini_resizeIfWidthLargerThan, %iniName%, settings, resizeIfWidthLargerThan
 	IniRead, ini_bitRate, %iniName%, settings, bitRate
+	IniRead, ini_singleInstance, %iniName%, settings, singleInstance
 	IniRead, ini_overrideFile, %iniName%, settings, overrideFile
 
+	
+	Gui, Show, w200 h80, VideoResizerWindow
+	Sleep, 100
+	
+	if(ini_singleInstance = 1) {
+		;check if a instance is already running
+		Winget,ArrayCount,Count,VideoResizerWindow
+		;M sgBox, Amount of instances: %ArrayCount%
+		if(ArrayCount > 1) {			
+			Winget,List,List,VideoResizerWindow
+
+			Loop %ArrayCount%
+			{
+				cPID := List%A_Index%
+				if(A_Index > 1) {	
+					WinGet, testPID, PID, VideoResizerWindow
+					;MsgBox, closing %A_Index% - %cPID% - %testPID%
+					WinClose, ahk_id %cPID%
+					Sleep, 100
+				}
+				;M sgBox "Element number " . A_Index . " is " . %cPID%
+			}
+		}
+	}
+	
 	IniRead, ini_tempDir, %iniName%, settings, tempDir
 	if(ini_tempDir == "WINDOWS_TEMP") {
 		ini_tempDir = %A_Temp%
@@ -42,7 +69,7 @@ Menu, tray, add, Exit
 	;check if no parameters START		
 	cFile = %1%
 	cLength := StrLen(cFile)	
-	
+	;M sgBox, %cLength%
 	if(cLength = 0) {
 		;User didnt drag any file, so he maybe wants to add / remove the application to the right click menu
 		GoSub, AddRemoveFromRegistry	
@@ -50,9 +77,11 @@ Menu, tray, add, Exit
 	}
 	;check if no parameters END
 	
+
 	Loop, %0%  ; For each parameter:
 	{
 		cFile := %A_Index%  ; Fetch the contents of the variable whose name is contained in A_Index.
+		;M sgBox, %cFile%
 		SplitPath, cFile, cFileName, sourceDir, cFileExtension, cFileNameNoExt, OutDrive
 		StringReplace, cFileNameNoExtNoSpaces, cFileNameNoExt, %A_Space%,,All
 		
@@ -60,7 +89,7 @@ Menu, tray, add, Exit
 		;cFileShort = %cFileShort%.%OutExtension%
 		;M sgBox %cFileShort%
 		
-		;M sgBox, %OutDir%
+		;M sgBox, %cFile%
 
 		outFilename = %cFileNameNoExtNoSpaces%_videoresizer.mp4		
 		
@@ -165,6 +194,10 @@ ConvertFAT(String)
 	}
 	Return, Output
 }
+	
+GuiClose:
+	ExitApp
+return
 	
 Reload:
 	Reload
