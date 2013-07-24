@@ -3,15 +3,17 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 #SingleInstance force
 #Persistent
 
-SetWorkingDir %A_ScriptDir%
-;SetTitleMatchMode, 2
+	SetWorkingDir %A_ScriptDir%
+	;SetTitleMatchMode, 2
 
-Menu, tray, Icon , VideoResizer.ico,  1
-Menu, tray, NoStandard
-Menu, tray, add  ; Creates a separator line.
-Menu, tray, add, Reload  
-Menu, tray, add, Exit
-
+	Menu, tray, Icon , VideoResizer.ico,  1
+	Menu, tray, NoStandard
+	Menu, tray, add  ; Creates a separator line.
+	Menu, tray, add, Reload  
+	Menu, tray, add, Exit
+	
+	;R un, % SendToPath  ;for testing
+	
 
 	IfNotExist, ffmpeg.exe
 	{
@@ -28,38 +30,12 @@ Menu, tray, add, Exit
 	}
 	
 	Global gName := ScriptNameNoExt()
-	Global gRegEntry := "*\shell\VideoResizer"
 	
 	iniName = %gName%.ini
 	IniRead, ini_resizeIfWidthLargerThan, %iniName%, settings, resizeIfWidthLargerThan
 	IniRead, ini_bitRate, %iniName%, settings, bitRate
 	IniRead, ini_singleInstance, %iniName%, settings, singleInstance
 	IniRead, ini_overrideFile, %iniName%, settings, overrideFile
-
-	
-	Gui, Show, w200 h80, VideoResizerWindow
-	Sleep, 100
-	
-	if(ini_singleInstance = 1) {
-		;check if a instance is already running
-		Winget,ArrayCount,Count,VideoResizerWindow
-		;M sgBox, Amount of instances: %ArrayCount%
-		if(ArrayCount > 1) {			
-			Winget,List,List,VideoResizerWindow
-
-			Loop %ArrayCount%
-			{
-				cPID := List%A_Index%
-				if(A_Index > 1) {	
-					WinGet, testPID, PID, VideoResizerWindow
-					;MsgBox, closing %A_Index% - %cPID% - %testPID%
-					WinClose, ahk_id %cPID%
-					Sleep, 100
-				}
-				;M sgBox "Element number " . A_Index . " is " . %cPID%
-			}
-		}
-	}
 	
 	IniRead, ini_tempDir, %iniName%, settings, tempDir
 	if(ini_tempDir == "WINDOWS_TEMP") {
@@ -71,8 +47,21 @@ Menu, tray, add, Exit
 	cLength := StrLen(cFile)	
 	;M sgBox, %cLength%
 	if(cLength = 0) {
-		;User didnt drag any file, so he maybe wants to add / remove the application to the right click menu
-		GoSub, AddRemoveFromRegistry	
+		;User didnt drag any file, so he maybe wants to add / remove the application to the sendTo menu
+
+		RegRead, SendToPath, HKCU, Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders, SendTo
+		EnvGet, USERPROFILE, USERPROFILE
+		StringReplace, SendToPath, SendToPath, `%USERPROFILE`%, %USERPROFILE%
+		SplitPath, A_ScriptFullPath, , WDir
+		
+		fileName = %SendToPath%\VideoResizer.lnk
+		IfNotExist, %fileName% 
+		{
+			FileCreateShortcut, % A_ScriptFullPath, % SendToPath . "\VideoResizer.lnk", % WDir	
+			MsgBox, SendTo entry created
+			ExitApp
+		}			
+		
 		ExitApp
 	}
 	;check if no parameters END
@@ -81,7 +70,8 @@ Menu, tray, add, Exit
 	Loop, %0%  ; For each parameter:
 	{
 		cFile := %A_Index%  ; Fetch the contents of the variable whose name is contained in A_Index.
-		;M sgBox, %cFile%
+		;M sgBox, %cFile%		
+
 		SplitPath, cFile, cFileName, sourceDir, cFileExtension, cFileNameNoExt, OutDrive
 		StringReplace, cFileNameNoExtNoSpaces, cFileNameNoExt, %A_Space%,,All
 		
@@ -125,7 +115,7 @@ Menu, tray, add, Exit
 		} else {
 			FileDelete, %ini_tempDir%\%outFilename%
 			MsgBox, There was an error converting your file
-		}		
+		}				
 
 	}
 
@@ -133,43 +123,6 @@ Menu, tray, add, Exit
 	
 return
 
-AddRemoveFromRegistry:
-	If !(A_IsAdmin) {
-		MsgBox, 52, % gName . " - Administrator rights required", % "You need Admin rights to add a Registry entry. Do you want to run " . gName . " as Admin now?"
-		IfMsgBox, Yes
-		{
-			Run *RunAs "%A_ScriptFullPath%"			
-		}
-	} else {
-		RegRead, cVal, HKEY_CLASSES_ROOT, %gRegEntry%		
-		If !(StrLen(cVal)) {			
-			cScriptPathAndName = %A_ScriptFullPath%
-			StringReplace, cScriptPathAndName, cScriptPathAndName, \ , \\, All				
-			AddCommand := "Resize Video"
-			RegWrite, REG_SZ, HKEY_CLASSES_ROOT, %gRegEntry%, , %AddCommand%
-			RegWrite, REG_SZ, HKEY_CLASSES_ROOT, %gRegEntry%\command, , "%cScriptPathAndName%" "`%1"
-			RegWrite, REG_SZ, HKEY_CLASSES_ROOT, %gRegEntry%, Icon, "%A_ScriptDir%\%gName%.ico"
-
-			RegRead, cVal, HKEY_CLASSES_ROOT, %gRegEntry%				
-			if(cVal = AddCommand) {
-				MsgBox, 64, % gName . " - Registry Entry", Successfully added to the right click menu				
-			} else {
-				MsgBox, 48, % gName . " - Registry Entry", Could not add the entry to the right click menu
-			}
-			
-		} else {		
-			RegDelete, HKEY_CLASSES_ROOT, %gRegEntry%								
-			RegRead, cVal, HKEY_CLASSES_ROOT, %gRegEntry%			
-			if !(StrLen(cVal)) {
-				GuiControl, , RegistryButton, Add Registry Entry
-				MsgBox, 64, % gName . " - Registry Entry", Successfully removed from the right click menu				
-			} else {			
-				MsgBox, 48, % gName . " - Registry Entry", Could not remove the entry from the right click menu
-			}
-			
-		}		
-	}
-return
 	
 ScriptNameNoExt() {
     SplitPath, A_ScriptName, , , , ScriptNameNoExt
@@ -194,10 +147,7 @@ ConvertFAT(String)
 	}
 	Return, Output
 }
-	
-GuiClose:
-	ExitApp
-return
+
 	
 Reload:
 	Reload
